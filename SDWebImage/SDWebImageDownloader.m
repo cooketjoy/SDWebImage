@@ -140,7 +140,7 @@ static NSString *const kCompletedCallbackKey = @"completed";
                                                                      SDWebImageDownloader *sself = wself;
                                                                      UIImage *convertedImage = image;
                                                                     if (sself.delegate && [sself.delegate respondsToSelector:@selector(imageDownloader:transformDownloadedImage:withURL:)]) {
-                                                                        image = [sself.delegate imageDownloader:sself transformDownloadedImage:image withURL:url];
+                                                                        convertedImage = [sself.delegate imageDownloader:sself transformDownloadedImage:image withURL:url];
                                                                     }
                                                                     if (convertedImage != image) {
                                                                         data = UIImagePNGRepresentation(convertedImage);
