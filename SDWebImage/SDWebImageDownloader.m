@@ -158,6 +158,9 @@ static NSString *const kCompletedCallbackKey = @"completed";
                                                                      if (!wself) return;
                                                                      SDWebImageDownloader *sself = wself;
                                                                      [sself removeCallbacksForURL:url];
+                                                                     if (sself.delegate && [sself.delegate respondsToSelector:@selector(imageDownloader:cancelingDownloadingForURL:)]) {
+                                                                         [sself.delegate imageDownloader:sself cancelingDownloadingForURL:url];
+                                                                     }
                                                                  }];
         
         if (options & SDWebImageDownloaderHighPriority) {

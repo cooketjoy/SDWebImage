@@ -15,7 +15,7 @@
 @protocol SDDownloaderDelegate <NSObject>
 
 - (UIImage *)imageDownloader:(SDWebImageDownloader *)downloader transformDownloadedImage:(UIImage *)image withURL:(NSURL *)imageURL;
-
+- (void)imageDownloader:(SDWebImageDownloader *)downloader cancelingDownloadingForURL:(NSURL *)imageURL;
 @end
 
 typedef NS_OPTIONS(NSUInteger, SDWebImageDownloaderOptions) {
