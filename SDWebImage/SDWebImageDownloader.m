@@ -105,7 +105,7 @@ static NSString *const kCompletedCallbackKey = @"completed";
 }
 
 - (id <SDWebImageOperation>)downloadImageWithURL:(NSURL *)url options:(SDWebImageDownloaderOptions)options progress:(void (^)(NSInteger, NSInteger))progressBlock completed:(void (^)(UIImage *, NSData *, NSError *, BOOL))completedBlock {
-    [self downloadImageWithURL:url options:options handler:nil progress:progressBlock completed:completedBlock];
+    return [self downloadImageWithURL:url options:options handler:nil progress:progressBlock completed:completedBlock];
 }
 
 - (id<SDWebImageOperation>)downloadImageWithURL:(NSURL *)url

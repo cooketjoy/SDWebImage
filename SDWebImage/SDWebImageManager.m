@@ -66,7 +66,7 @@
 }
 
 - (id <SDWebImageOperation>)downloadWithURL:(NSURL *)url options:(SDWebImageOptions)options progress:(SDWebImageDownloaderProgressBlock)progressBlock completed:(SDWebImageCompletedWithFinishedBlock)completedBlock {
-    [self downloadWithURL:url options:options handler:nil progress:progressBlock completed:completedBlock];
+    return [self downloadWithURL:url options:options handler:nil progress:progressBlock completed:completedBlock];
 }
 
 - (id<SDWebImageOperation>)downloadWithURL:(NSURL *)url
