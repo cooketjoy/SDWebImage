@@ -66,28 +66,37 @@
 }
 
 - (id <SDWebImageOperation>)downloadWithURL:(NSURL *)url options:(SDWebImageOptions)options progress:(SDWebImageDownloaderProgressBlock)progressBlock completed:(SDWebImageCompletedWithFinishedBlock)completedBlock {
+    [self downloadWithURL:url options:options handler:nil progress:progressBlock completed:completedBlock];
+}
+
+- (id<SDWebImageOperation>)downloadWithURL:(NSURL *)url
+                                   options:(SDWebImageOptions)options
+                                   handler:(SDImageDecodeBlock)handler
+                                  progress:(SDWebImageDownloaderProgressBlock)progressBlock
+                                 completed:(SDWebImageCompletedWithFinishedBlock)completedBlock
+{
     // Invoking this method without a completedBlock is pointless
     NSParameterAssert(completedBlock);
-
+    
     // Very common mistake is to send the URL using NSString object instead of NSURL. For some strange reason, XCode won't
     // throw any warning for this type mismatch. Here we failsafe this error by allowing URLs to be passed as NSString.
     if ([url isKindOfClass:NSString.class]) {
         url = [NSURL URLWithString:(NSString *)url];
     }
-
+    
     // Prevents app crashing on argument type error like sending NSNull instead of NSURL
     if (![url isKindOfClass:NSURL.class]) {
         url = nil;
     }
-
+    
     __block SDWebImageCombinedOperation *operation = [SDWebImageCombinedOperation new];
     __weak SDWebImageCombinedOperation *weakOperation = operation;
-
+    
     BOOL isFailedUrl = NO;
     @synchronized (self.failedURLs) {
         isFailedUrl = [self.failedURLs containsObject:url];
     }
-
+    
     if (!url || (!(options & SDWebImageRetryFailed) && isFailedUrl)) {
         dispatch_main_sync_safe(^{
             NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorFileDoesNotExist userInfo:nil];
@@ -95,21 +104,21 @@
         });
         return operation;
     }
-
+    
     @synchronized (self.runningOperations) {
         [self.runningOperations addObject:operation];
     }
     NSString *key = [self cacheKeyForURL:url];
-
+    
     operation.cacheOperation = [self.imageCache queryDiskCacheForKey:key done:^(UIImage *image, SDImageCacheType cacheType) {
         if (operation.isCancelled) {
             @synchronized (self.runningOperations) {
                 [self.runningOperations removeObject:operation];
             }
-
+            
             return;
         }
-
+        
         if ((!image || options & SDWebImageRefreshCached) && (![self.delegate respondsToSelector:@selector(imageManager:shouldDownloadImageForURL:)] || [self.delegate imageManager:self shouldDownloadImageForURL:url])) {
             if (image && options & SDWebImageRefreshCached) {
                 dispatch_main_sync_safe(^{
@@ -118,7 +127,7 @@
                     completedBlock(image, nil, cacheType, YES);
                 });
             }
-
+            
             // download if no image or requested to refresh anyway, and download allowed by delegate
             SDWebImageDownloaderOptions downloaderOptions = 0;
             if (options & SDWebImageLowPriority) downloaderOptions |= SDWebImageDownloaderLowPriority;
@@ -134,7 +143,7 @@
                 // ignore image read from NSURLCache if image if cached but force refreshing
                 downloaderOptions |= SDWebImageDownloaderIgnoreCachedResponse;
             }
-            id <SDWebImageOperation> subOperation = [self.imageDownloader downloadImageWithURL:url options:downloaderOptions progress:progressBlock completed:^(UIImage *downloadedImage, NSData *data, NSError *error, BOOL finished) {
+            id <SDWebImageOperation> subOperation = [self.imageDownloader downloadImageWithURL:url options:downloaderOptions handler:handler progress:progressBlock completed:^(UIImage *downloadedImage, NSData *data, NSError *error, BOOL finished) {
                 if (weakOperation.isCancelled) {
                     dispatch_main_sync_safe(^{
                         completedBlock(nil, nil, SDImageCacheTypeNone, finished);
@@ -144,7 +153,7 @@
                     dispatch_main_sync_safe(^{
                         completedBlock(nil, error, SDImageCacheTypeNone, finished);
                     });
-
+                    
                     if (error.code != NSURLErrorNotConnectedToInternet) {
                         @synchronized (self.failedURLs) {
                             [self.failedURLs addObject:url];
@@ -153,19 +162,19 @@
                 }
                 else {
                     BOOL cacheOnDisk = !(options & SDWebImageCacheMemoryOnly);
-
+                    
                     if (options & SDWebImageRefreshCached && image && !downloadedImage) {
                         // Image refresh hit the NSURLCache cache, do not call the completion block
                     }
-                            // NOTE: We don't call transformDownloadedImage delegate method on animated images as most transformation code would mangle it
+                    // NOTE: We don't call transformDownloadedImage delegate method on animated images as most transformation code would mangle it
                     else if (downloadedImage && !downloadedImage.images && [self.delegate respondsToSelector:@selector(imageManager:transformDownloadedImage:withURL:)]) {
                         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
                             UIImage *transformedImage = [self.delegate imageManager:self transformDownloadedImage:downloadedImage withURL:url];
-
+                            
                             dispatch_main_sync_safe(^{
                                 completedBlock(transformedImage, nil, SDImageCacheTypeNone, finished);
                             });
-
+                            
                             if (transformedImage && finished) {
                                 BOOL imageWasTransformed = ![transformedImage isEqual:downloadedImage];
                                 [self.imageCache storeImage:transformedImage recalculateFromImage:imageWasTransformed imageData:data forKey:key toDisk:cacheOnDisk];
@@ -176,13 +185,13 @@
                         dispatch_main_sync_safe(^{
                             completedBlock(downloadedImage, nil, SDImageCacheTypeNone, finished);
                         });
-
+                        
                         if (downloadedImage && finished) {
                             [self.imageCache storeImage:downloadedImage recalculateFromImage:NO imageData:data forKey:key toDisk:cacheOnDisk];
                         }
                     }
                 }
-
+                
                 if (finished) {
                     @synchronized (self.runningOperations) {
                         [self.runningOperations removeObject:operation];
@@ -211,7 +220,7 @@
             }
         }
     }];
-
+    
     return operation;
 }
 

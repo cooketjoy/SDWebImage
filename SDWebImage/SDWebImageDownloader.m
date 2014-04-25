@@ -105,15 +105,24 @@ static NSString *const kCompletedCallbackKey = @"completed";
 }
 
 - (id <SDWebImageOperation>)downloadImageWithURL:(NSURL *)url options:(SDWebImageDownloaderOptions)options progress:(void (^)(NSInteger, NSInteger))progressBlock completed:(void (^)(UIImage *, NSData *, NSError *, BOOL))completedBlock {
+    [self downloadImageWithURL:url options:options handler:nil progress:progressBlock completed:completedBlock];
+}
+
+- (id<SDWebImageOperation>)downloadImageWithURL:(NSURL *)url
+                                        options:(SDWebImageDownloaderOptions)options
+                                        handler:(SDImageDecodeBlock)handler
+                                       progress:(SDWebImageDownloaderProgressBlock)progressBlock
+                                      completed:(SDWebImageDownloaderCompletedBlock)completedBlock
+{
     __block SDWebImageDownloaderOperation *operation;
     __weak SDWebImageDownloader *wself = self;
-
+    
     [self addProgressCallback:progressBlock andCompletedBlock:completedBlock forURL:url createCallback:^{
         NSTimeInterval timeoutInterval = wself.downloadTimeout;
         if (timeoutInterval == 0.0) {
             timeoutInterval = 15.0;
         }
-
+        
         // In order to prevent from potential duplicate caching (NSURLCache + SDImageCache) we disable the cache for image requests if told otherwise
         NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url cachePolicy:(options & SDWebImageDownloaderUseNSURLCache ? NSURLRequestUseProtocolCachePolicy : NSURLRequestReloadIgnoringLocalCacheData) timeoutInterval:timeoutInterval];
         request.HTTPShouldHandleCookies = (options & SDWebImageDownloaderHandleCookies);
@@ -124,6 +133,7 @@ static NSString *const kCompletedCallbackKey = @"completed";
         else {
             request.allHTTPHeaderFields = wself.HTTPHeaders;
         }
+
         operation = [[SDWebImageDownloaderOperation alloc] initWithRequest:request
                                                                    options:options
                                                                   progress:^(NSInteger receivedSize, NSInteger expectedSize) {
@@ -139,12 +149,12 @@ static NSString *const kCompletedCallbackKey = @"completed";
                                                                      if (!wself) return;
                                                                      SDWebImageDownloader *sself = wself;
                                                                      UIImage *convertedImage = image;
-                                                                    if (sself.delegate && [sself.delegate respondsToSelector:@selector(imageDownloader:transformDownloadedImage:withURL:)]) {
-                                                                        convertedImage = [sself.delegate imageDownloader:sself transformDownloadedImage:image withURL:url];
-                                                                    }
-                                                                    if (convertedImage != image) {
-                                                                        data = UIImagePNGRepresentation(convertedImage);
-                                                                    }
+                                                                     if (handler) {
+                                                                         convertedImage = handler(image);
+                                                                     }
+                                                                     if (convertedImage != image) {
+                                                                         data = UIImagePNGRepresentation(convertedImage);
+                                                                     }
                                                                      NSArray *callbacksForURL = [sself callbacksForURL:url];
                                                                      if (finished) {
                                                                          [sself removeCallbacksForURL:url];
@@ -158,15 +168,12 @@ static NSString *const kCompletedCallbackKey = @"completed";
                                                                      if (!wself) return;
                                                                      SDWebImageDownloader *sself = wself;
                                                                      [sself removeCallbacksForURL:url];
-                                                                     if (sself.delegate && [sself.delegate respondsToSelector:@selector(imageDownloader:cancelingDownloadingForURL:)]) {
-                                                                         [sself.delegate imageDownloader:sself cancelingDownloadingForURL:url];
-                                                                     }
                                                                  }];
         
         if (options & SDWebImageDownloaderHighPriority) {
             operation.queuePriority = NSOperationQueuePriorityHigh;
         }
-
+        
         [wself.downloadQueue addOperation:operation];
         if (wself.executionOrder == SDWebImageDownloaderLIFOExecutionOrder) {
             // Emulate LIFO execution order by systematically adding new operations as last operation's dependency
@@ -174,7 +181,7 @@ static NSString *const kCompletedCallbackKey = @"completed";
             wself.lastAddedOperation = operation;
         }
     }];
-
+    
     return operation;
 }
 

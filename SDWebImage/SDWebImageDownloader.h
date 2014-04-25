@@ -10,13 +10,7 @@
 #import "SDWebImageCompat.h"
 #import "SDWebImageOperation.h"
 
-@class SDWebImageDownloader;
-
-@protocol SDDownloaderDelegate <NSObject>
-
-- (UIImage *)imageDownloader:(SDWebImageDownloader *)downloader transformDownloadedImage:(UIImage *)image withURL:(NSURL *)imageURL;
-- (void)imageDownloader:(SDWebImageDownloader *)downloader cancelingDownloadingForURL:(NSURL *)imageURL;
-@end
+typedef UIImage *(^SDImageDecodeBlock)(UIImage *image);
 
 typedef NS_OPTIONS(NSUInteger, SDWebImageDownloaderOptions) {
     SDWebImageDownloaderLowPriority = 1 << 0,
@@ -87,7 +81,6 @@ typedef void(^SDWebImageDownloaderCompletedBlock)(UIImage *image, NSData *data, 
 
 @property (assign, nonatomic) NSInteger maxConcurrentDownloads;
 
-@property (weak, nonatomic) id<SDDownloaderDelegate> delegate;
 /**
  * Shows the current amount of downloads that still need to be downloaded
  */
@@ -154,6 +147,12 @@ typedef void(^SDWebImageDownloaderCompletedBlock)(UIImage *image, NSData *data, 
  */
 - (id <SDWebImageOperation>)downloadImageWithURL:(NSURL *)url
                                          options:(SDWebImageDownloaderOptions)options
+                                        progress:(SDWebImageDownloaderProgressBlock)progressBlock
+                                       completed:(SDWebImageDownloaderCompletedBlock)completedBlock;
+
+- (id <SDWebImageOperation>)downloadImageWithURL:(NSURL *)url
+                                         options:(SDWebImageDownloaderOptions)options
+                                         handler:(SDImageDecodeBlock)handler
                                         progress:(SDWebImageDownloaderProgressBlock)progressBlock
                                        completed:(SDWebImageDownloaderCompletedBlock)completedBlock;
 
