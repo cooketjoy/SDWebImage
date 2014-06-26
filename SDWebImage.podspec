@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'SDWebImage'
-  s.version = '3.5.5'
+  s.version = '3.5.6'
   s.platform = :ios, '5.0'
   s.license = 'MIT'
   s.summary = 'Asynchronous image downloader with cache support with an UIImageView category.'
@@ -32,10 +32,10 @@ Pod::Spec.new do |s|
     mk.dependency 'SDWebImage/Core'
   end
 
-  s.subspec 'WebP' do |webp|
-    webp.source_files = 'SDWebImage/UIImage+WebP.{h,m}'
-    webp.xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) SD_WEBP=1' }
-    webp.dependency 'SDWebImage/Core'
-    webp.dependency 'libwebp'
-  end
+  #s.subspec 'WebP' do |webp|
+  #  webp.source_files = 'SDWebImage/UIImage+WebP.{h,m}'
+  #  webp.xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) SD_WEBP=1' }
+  #  webp.dependency 'SDWebImage/Core'
+  #  webp.dependency 'libwebp'
+  #end
 end

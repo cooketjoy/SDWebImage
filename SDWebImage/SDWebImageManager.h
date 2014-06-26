@@ -92,6 +92,10 @@ typedef void(^SDWebImageCompletedWithFinishedBlock)(UIImage *image, NSError *err
  */
 - (BOOL)imageManager:(SDWebImageManager *)imageManager shouldDownloadImageForURL:(NSURL *)imageURL;
 
+
+//delegate can modify url before downloading for some reason, return url which is modified.
+- (NSURL*)imageManager:(SDWebImageManager*)imageManager willDownloadImageForURL:(NSURL *)imageURL;
+
 /**
  * Allows to transform the image immediately after it has been downloaded and just before to cache it on disk and memory.
  * NOTE: This method is called from a global queue in order to not to block the main thread.
