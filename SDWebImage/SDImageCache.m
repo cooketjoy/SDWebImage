@@ -339,6 +339,25 @@ BOOL ImageDataHasPNGPreffix(NSData *data) {
     [self clearDiskOnCompletion:nil];
 }
 
+- (void)clearDiskExceptForKeys:(NSArray *)keys
+{
+    dispatch_async(self.ioQueue, ^{
+        NSMutableArray* exceptFiles = [NSMutableArray arrayWithCapacity:[keys count]];
+        for (NSString* key in keys) {
+            [exceptFiles addObject:[self cachedFileNameForKey:key]];
+        }
+        
+        NSDirectoryEnumerator* fileEnumerator = [[NSFileManager defaultManager] enumeratorAtPath:self.diskCachePath];
+        for (NSString* fileName in fileEnumerator) {
+            if ([exceptFiles containsObject:fileName]) {
+                continue;
+            }
+            
+            [[NSFileManager defaultManager] removeItemAtPath:[self.diskCachePath stringByAppendingPathComponent:fileName] error:nil];
+        }
+    });
+}
+
 - (void)clearDiskOnCompletion:(void (^)())completion
 {
     dispatch_async(self.ioQueue, ^{

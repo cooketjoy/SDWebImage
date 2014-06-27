@@ -146,6 +146,7 @@ typedef void(^SDWebImageQueryCompletedBlock)(UIImage *image, SDImageCacheType ca
 - (void)clearDisk;
 - (void)clearDiskOnCompletion:(void (^)())completion;
 
+- (void)clearDiskExceptForKeys:(NSArray*)keys;
 /**
  * Remove all expired cached image from disk
  */
